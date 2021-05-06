@@ -3,9 +3,14 @@
 #include <sys/types.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <string.h>
+
+#define SIZE 1024
+
+int receive_file(int sockfd);
 
 int main() {
-        char server_msg[1024] = "Successfully connected to the Server.";
+        char server_msg[SIZE] = "Successfully connected to the Server.";
 
         int server_socket = socket(AF_INET, SOCK_STREAM, 0);
 
@@ -23,7 +28,35 @@ int main() {
 
         send(new_socket, &server_msg, sizeof(server_msg), 0);
 
+	int status = receive_file(new_socket);
+	if (status != 0) {
+		return 1;
+	}
+
         close(server_socket);
 
         return 0;
+}
+
+int receive_file(int sockfd) {
+	int count = 0;
+	char data[SIZE] = {'\0'};
+
+	FILE *fp = fopen("test.txt", "w");
+	if (fp == NULL) {
+		printf("Failed to open file.");
+		return 1;
+	}
+
+	while (1) {
+		count = recv(sockfd, data, sizeof(data), 0);
+		if (count <= 0) {
+			break;
+		}
+		
+		fprintf(fp, "%s", data);
+		memset(data, 0, sizeof(data));	
+	}
+
+	return 0;
 }
